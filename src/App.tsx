@@ -1,26 +1,22 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { Header } from './components/Header'
+import { Group } from './components/Group'
+
+import { groups } from './data/groups'
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+	return (
+		<>
+			<Header />
+			<main className="flex">
+				<section className="groups w-full h-96 max-h-96 overflow-y-auto">
+					{groups.map(group => <Group group={group} />)}
+				</section>
+				<section className="group-settings w-full h-96 max-h-96 overflow-y-auto">
+					{groups.map(group => <Group group={group} />)}
+				</section>
+			</main>
+		</>
+	)
 }
 
-export default App;
+export default App
