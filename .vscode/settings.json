@@ -1,0 +1,6 @@
+{
+	"git.openDiffOnClick": true,
+	"git.decorations.enabled": true,
+	"git.useEditorAsCommitInput": true,
+	"terminal.integrated.confirmOnKill": "editor"
+}

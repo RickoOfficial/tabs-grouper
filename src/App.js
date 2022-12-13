@@ -2,50 +2,60 @@ import { useState } from 'react'
 
 import { Header } from './components/Header'
 import { Group } from './components/Group'
-import { CircleButton } from './components/CircleButton'
 import { Modal } from './components/Modal'
+
+import { CircleButton } from './components/CircleButton'
+import { Button } from './components/Button'
 
 // import { groups } from './data/groups'
 
 const App = () => {
-	// const [groups, setGroups] = useState([])
-	// const [redactGroup, setRedactGroup] = useState(null)
+	const [groups, setGroups] = useState([])
+	const [redactGroup, setRedactGroup] = useState(null)
+	const [showDeleteModal, setShowDeleteModal] = useState(false)
 
-	// chrome.runtime.sendMessage('fetchGroups', (response) => {
-	// 	setGroups(response)
-	// })
+	chrome.runtime.sendMessage('fetchGroups', (response) => {
+		setGroups(response)
+	})
 
-	// const createGroup = () => {
-	// 	chrome.runtime.sendMessage('createGroup', (response) => {
-	// 		setGroups([...groups, response])
-	// 	})
-	// }
+	const createGroup = () => {
+		chrome.runtime.sendMessage('createGroup', (response) => {
+			setGroups([...groups, response])
+		})
+	}
 
-	// const saveRedactGroup = () => {
-	// 	setRedactGroup(null)
+	const deleteGroup = () => {
+		chrome.runtime.sendMessage(`deleteGroup-${redactGroup.id}`)
 
-	// 	chrome.runtime.sendMessage(
-	// 		JSON.stringify({
-	// 			function: 'saveRedactGroup',
-	// 			group: { ...redactGroup }
-	// 		}),
-	// 		(response) => {
-	// 			setGroups(response)
-	// 		}
-	// 	)
-	// }
+		setGroups(groups.filter(group => group.id !== redactGroup.id))
+		setRedactGroup(null)
+		setShowDeleteModal(false)
+	}
 
-	// const openSettings = (group) => {
-	// 	chrome.runtime.sendMessage(`openSettings-${group.id}`, (response) => {
-	// 		setRedactGroup(response)
-	// 	})
-	// }
+	const saveRedactGroup = () => {
+		setGroups(groups.map(group => group.id === redactGroup.id ? redactGroup : group))
 
-	// const closeSettings = () => {
-	// 	setRedactGroup(null)
+		chrome.runtime.sendMessage(JSON.stringify({ function: 'saveRedactGroup', group: { ...redactGroup } }))
 
-	// 	chrome.runtime.sendMessage('closeSetting')
-	// }
+		setRedactGroup(null)
+	}
+
+	const openGroup = (groupId) => {
+		chrome.runtime.sendMessage(`openGroup-${groupId}`)
+		setGroups(groups.map(group => group.id === groupId ? { ...group, active: true } : { ...group, active: false }))
+	}
+
+	const openSettings = (group) => {
+		chrome.runtime.sendMessage(`openSettings-${group.id}`, (response) => {
+			setRedactGroup(response)
+		})
+	}
+
+	const closeSettings = () => {
+		chrome.runtime.sendMessage('closeSetting')
+
+		setRedactGroup(null)
+	}
 
 	// const fetchTabs = () => {
 	// 	chrome.runtime.sendMessage('Hello, background', (response) => {
@@ -53,16 +63,11 @@ const App = () => {
 	// 	})
 	// }
 
-	const [showDeleteModal, setShowDeleteModal] = useState(false)
-	const showHideModal = () => {
-		setShowDeleteModal(!showDeleteModal)
-	}
-
 	return (
-		<div className="app relative w-96 text-base">
-			{/* <Header createGroup={createGroup} /> */}
+		<div className="app relative w-96 text-base overflow-hidden">
+			<Header createGroup={createGroup} />
 
-			{/* <main className="flex">
+			<main className="flex">
 
 				{groups.length
 					? <section
@@ -75,6 +80,7 @@ const App = () => {
 							<Group
 								key={group.id}
 								group={group}
+								openGroup={openGroup}
 								openSettings={() => { openSettings(group) }}
 							/>
 						)}
@@ -119,7 +125,10 @@ const App = () => {
 									</svg>
 									<span className="absolute -bottom-3 text-green-600 text-xs opacity-0 ease-in-out duration-150 group-hover:opacity-100">Save</span>
 								</CircleButton>
-								<CircleButton className="group-settings__delete relative group">
+								<CircleButton
+									onClick={() => setShowDeleteModal(true)}
+									className="group-settings__delete relative group"
+								>
 									<svg className="bi bi-pencil w-full h-full text-pink-600" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
 										<path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z" />
 										<path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z" />
@@ -138,19 +147,27 @@ const App = () => {
 					</section>
 				}
 
-			</main> */}
-
-			<Header />
-
-
-			<main className="flex">
-				<section className={'groups flex-grow flex-shrink-0 basis-full w-full h-96 max-h-96 overflow-y-auto ease-in-out duration-150'} >
-					<button onClick={showHideModal}>openmodal</button>
-				</section>
 			</main>
 
-			<Modal show={showDeleteModal} title="Are you sure you want to delete?">
-				123
+			{/* <Header />
+			<main className="flex">
+				<section className={'groups flex-grow flex-shrink-0 basis-full w-full h-96 max-h-96 overflow-y-auto ease-in-out duration-150'} >
+					<button onClick={() => setShowDeleteModal(true)} className='px-4 py-2 font-semibold text-sm bg-sky-500 text-white rounded-md shadow-sm opacity-100'>Button A</button>
+				</section>
+			</main> */}
+
+			<Modal show={showDeleteModal} setShow={setShowDeleteModal} title="Are you sure?">
+				<div className="mb-2">Are you sure you want to delete the group «{redactGroup ? redactGroup.name : ''}»</div>
+				<div className="flex justify-between items-center">
+					<Button
+						onClick={() => setShowDeleteModal(false)}
+						className="bg-green-600 text-white"
+					>Отмена</Button>
+					<Button
+						onClick={deleteGroup}
+						className="bg-pink-600 text-white"
+					>Удалить</Button>
+				</div>
 			</Modal>
 		</div>
 	)
