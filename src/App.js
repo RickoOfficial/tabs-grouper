@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Header } from './components/Header'
 import { Group } from './components/Group'
@@ -11,51 +11,62 @@ import { Button } from './components/Button'
 
 const App = () => {
 	const [groups, setGroups] = useState([])
-	const [redactGroup, setRedactGroup] = useState(null)
-	const [showDeleteModal, setShowDeleteModal] = useState(false)
 
-	chrome.runtime.sendMessage('fetchGroups', (response) => {
-		setGroups(response)
-	})
-
-	const createGroup = () => {
-		chrome.runtime.sendMessage('createGroup', (response) => {
-			setGroups([...groups, response])
+	const getGroups = () => {
+		chrome.runtime.sendMessage('getGroups', (response) => {
+			setGroups(response)
 		})
 	}
 
-	const deleteGroup = () => {
-		chrome.runtime.sendMessage(`deleteGroup-${redactGroup.id}`)
+	useEffect(() => {
+		getGroups()
+	}, [])
 
-		setGroups(groups.filter(group => group.id !== redactGroup.id))
-		setRedactGroup(null)
-		setShowDeleteModal(false)
-	}
+	// const [redactGroup, setRedactGroup] = useState(null)
+	// const [showDeleteModal, setShowDeleteModal] = useState(false)
 
-	const saveRedactGroup = () => {
-		setGroups(groups.map(group => group.id === redactGroup.id ? redactGroup : group))
+	// chrome.runtime.sendMessage('fetchGroups', (response) => {
+	// 	setGroups(response)
+	// })
 
-		chrome.runtime.sendMessage(JSON.stringify({ function: 'saveRedactGroup', group: { ...redactGroup } }))
+	// const createGroup = () => {
+	// 	chrome.runtime.sendMessage('createGroup', (response) => {
+	// 		setGroups([...groups, response])
+	// 	})
+	// }
 
-		setRedactGroup(null)
-	}
+	// const deleteGroup = () => {
+	// 	chrome.runtime.sendMessage(`deleteGroup-${redactGroup.id}`)
 
-	const openGroup = (groupId) => {
-		chrome.runtime.sendMessage(`openGroup-${groupId}`)
-		setGroups(groups.map(group => group.id === groupId ? { ...group, active: true } : { ...group, active: false }))
-	}
+	// 	setGroups(groups.filter(group => group.id !== redactGroup.id))
+	// 	setRedactGroup(null)
+	// 	setShowDeleteModal(false)
+	// }
 
-	const openSettings = (group) => {
-		chrome.runtime.sendMessage(`openSettings-${group.id}`, (response) => {
-			setRedactGroup(response)
-		})
-	}
+	// const saveRedactGroup = () => {
+	// 	setGroups(groups.map(group => group.id === redactGroup.id ? redactGroup : group))
 
-	const closeSettings = () => {
-		chrome.runtime.sendMessage('closeSetting')
+	// 	chrome.runtime.sendMessage(JSON.stringify({ function: 'saveRedactGroup', group: { ...redactGroup } }))
 
-		setRedactGroup(null)
-	}
+	// 	setRedactGroup(null)
+	// }
+
+	// const openGroup = (groupId) => {
+	// 	chrome.runtime.sendMessage(`openGroup-${groupId}`)
+	// 	setGroups(groups.map(group => group.id === groupId ? { ...group, active: true } : { ...group, active: false }))
+	// }
+
+	// const openSettings = (group) => {
+	// 	chrome.runtime.sendMessage(`openSettings-${group.id}`, (response) => {
+	// 		setRedactGroup(response)
+	// 	})
+	// }
+
+	// const closeSettings = () => {
+	// 	chrome.runtime.sendMessage('closeSetting')
+
+	// 	setRedactGroup(null)
+	// }
 
 	// const fetchTabs = () => {
 	// 	chrome.runtime.sendMessage('Hello, background', (response) => {
@@ -65,7 +76,7 @@ const App = () => {
 
 	return (
 		<div className="app relative w-96 text-base overflow-hidden">
-			<Header createGroup={createGroup} />
+			{/* <Header createGroup={createGroup} />
 
 			<main className="flex">
 
@@ -147,7 +158,7 @@ const App = () => {
 					</section>
 				}
 
-			</main>
+			</main> */}
 
 			{/* <Header />
 			<main className="flex">
@@ -156,7 +167,7 @@ const App = () => {
 				</section>
 			</main> */}
 
-			<Modal show={showDeleteModal} setShow={setShowDeleteModal} title="Are you sure?">
+			{/* <Modal show={showDeleteModal} setShow={setShowDeleteModal} title="Are you sure?">
 				<div className="mb-2">Are you sure you want to delete the group «{redactGroup ? redactGroup.name : ''}»</div>
 				<div className="flex justify-between items-center">
 					<Button
@@ -168,7 +179,7 @@ const App = () => {
 						className="bg-pink-600 text-white"
 					>Удалить</Button>
 				</div>
-			</Modal>
+			</Modal> */}
 		</div>
 	)
 }
