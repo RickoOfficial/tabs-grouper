@@ -1,18 +1,18 @@
 // import { useState } from 'react'
 import { CircleButton } from './CircleButton'
 
-export function Group({ group, openSettings, openGroup }) {
+export function Group({ group, openGroupSettings, openGroup }) {
 
 	return (
 		<div
-			className='flex items-center px-4 py-2  ease-in-out duration-150 hover:bg-gray-200 cursor-pointer select-none'
+			className='flex items-center px-2 py-1 text-sm ease-in-out duration-150 hover:bg-gray-200 cursor-pointer select-none'
 		>
 			<div
-				onClick={() => { openGroup(group.id) }}
-				className="group__name w-full"
+				onClick={() => { openGroup() }}
+				className="group__name w-full whitespace-nowrap"
 			>{group.name}</div>
 			<CircleButton
-				onClick={() => { openSettings() }}
+				onClick={() => { openGroupSettings() }}
 				className="group__settings"
 			>
 				<svg className="bi bi-gear-fill w-full h-full text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">

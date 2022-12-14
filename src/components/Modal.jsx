@@ -24,7 +24,7 @@ export function Modal({ children, title, show, setShow, ...props }) {
 					</svg>
 					<span className="absolute -bottom-3 text-gray-600 text-xs opacity-0 ease-in-out duration-150 group-hover:opacity-100">Close</span>
 				</CircleButton>
-				<div className="modal__title mb-4 w-11/12 font-bold text-lg">{title}</div>
+				<div className="modal__title mb-2 w-11/12 font-bold text-lg">{title}</div>
 				<div className="modal__body text-sm">{children}</div>
 			</div>
 		</div>
