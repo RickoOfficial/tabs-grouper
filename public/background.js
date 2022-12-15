@@ -60,13 +60,14 @@ class TabsGrouper {
 	createGroup(callback) {
 		let newGroup = {
 			id: this.generateId(12),
-			name: `Группа #${this.groups.length + 1}`,
+			name: `Group #${this.groups.length + 1}`,
 			index: this.groups.length,
 			tabs: [],
-			active: false,
 		}
 
 		if (this.groups.length === 0) {
+			newGroup.active = true
+
 			chrome.tabs.query({ currentWindow: true }, tabs => {
 				for (let tab of tabs) {
 					newGroup.tabs.push({
@@ -78,27 +79,46 @@ class TabsGrouper {
 					})
 				}
 
-				callback(newGroup)
-
 				this.groups.push(newGroup)
-				this.setLocalStorage()
+				setTimeout(() => {
+					this.setLocalStorage()
+				}, 1)
+				callback(newGroup)
 			})
 		} else {
-			callback(newGroup)
-
 			this.groups.push(newGroup)
-			this.setLocalStorage()
+			setTimeout(() => {
+				this.setLocalStorage()
+			}, 1)
+			callback(newGroup)
 		}
 	}
 
 	saveRedactGroup(redactGroup) {
 		this.groups = this.groups.map(group => group.id === redactGroup.id ? redactGroup : group)
-		this.setLocalStorage()
+		setTimeout(() => {
+			this.setLocalStorage()
+		}, 1)
 	}
 
 	deleteGroup(deleteGroupId) {
 		this.groups = this.groups.filter(group => group.id !== deleteGroupId)
-		this.setLocalStorage()
+		setTimeout(() => {
+			this.setLocalStorage()
+		}, 1)
+	}
+
+	faviconToBase64(favIconUrl, callback) {
+		fetch(favIconUrl)
+			.then(response => response.blob())
+			.then(blob => {
+				let reader = new FileReader()
+				reader.onloadend = () => {
+					callback(reader.result)
+				}
+				reader.readAsDataURL(blob)
+			})
+			.catch(error => { callback(favIconUrl) })
 	}
 
 	getLocalStorage() {
@@ -110,12 +130,26 @@ class TabsGrouper {
 					}
 				}
 			} else {
-				this.setLocalStorage()
+				setTimeout(() => {
+					this.setLocalStorage()
+				}, 1)
 			}
 		})
 	}
 
 	setLocalStorage() {
+		for (let i in this.groups) {
+			for (let j in this.groups[i].tabs) {
+				if (this.groups[i].tabs[j].favIconUrl && this.groups[i].tabs[j].favIconUrl.indexOf('data:') === -1) {
+					try {
+						this.faviconToBase64(this.groups[i].tabs[j].favIconUrl, base64 => {
+							this.groups[i].tabs[j].favIconUrl = base64
+						})
+					} catch (error) { }
+				}
+			}
+		}
+
 		setTimeout(() => {
 			chrome.storage.local.set({ 'TabsGrouper': this })
 		}, 1)

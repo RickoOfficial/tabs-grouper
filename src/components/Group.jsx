@@ -1,11 +1,26 @@
 // import { useState } from 'react'
-import { CircleButton } from './CircleButton'
+import { Button } from './Button'
 
 export function Group({ group, openGroupSettings, openGroup }) {
 
 	return (
+		<div className="flex overflow-hidden">
+			<div className="flex-auto relative pl-4 py-2 overflow-hidden whitespace-nowrap">
+				{group.name}
+				<div className="absolute top-0 right-0 w-8 h-full bg-gradient-to-r from-white/0 via-white/90 to-white"></div>
+			</div>
+			<div className="pr-4 py-2">
+				<Button
+					onClick={() => { openGroupSettings() }}
+					className="px-1 text-white bg-sky-500"
+				>Settings</Button>
+			</div>
+		</div>
+	)
+	/*
+	return (
 		<div
-			className='flex items-center px-2 py-1 text-sm ease-in-out duration-150 hover:bg-gray-200 cursor-pointer select-none'
+			className='flex items-center px-2 py-1 text-sm ease-in-out duration-150 hover:bg-sky-100 cursor-pointer select-none'
 		>
 			<div
 				onClick={() => { openGroup() }}
@@ -21,4 +36,5 @@ export function Group({ group, openGroupSettings, openGroup }) {
 			</CircleButton>
 		</div>
 	)
+	*/
 }

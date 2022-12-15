@@ -34,7 +34,6 @@ const App = () => {
 
 	const createGroup = () => {
 		chrome.runtime.sendMessage({ function: 'createGroup' }, (response) => {
-			console.log(response)
 			if (groups.length > 0) {
 				setGroups([...groups, response])
 			} else {
@@ -52,18 +51,76 @@ const App = () => {
 	}
 
 	const saveRedactGroup = () => {
-		chrome.runtime.sendMessage({ function: 'saveRedactGroup', redactGroup: redactGroup })
-
 		setGroups(groups.map(group => group.id === redactGroup.id ? redactGroup : group))
+		chrome.runtime.sendMessage({ function: 'saveRedactGroup', redactGroup: redactGroup })
 	}
 
 	const deleteGroup = () => {
+		setShowDeleteModal(false)
 		setGroups(groups.filter(group => group.id !== redactGroup.id))
 		closeGroupSettings()
-		setShowDeleteModal(false)
 		chrome.runtime.sendMessage({ function: 'deleteGroup', deleteGroupId: redactGroup.id })
 	}
 
+	return (
+		<div className="flex w-80 max-h-128 h-128 text-base">
+			<div
+				className={
+					'flex flex-col min-w-full ease-in-out duration-150 '
+					+ (redactGroup !== null ? '-ml-80' : '')
+				}
+			>
+
+				{/* Поиск группы */}
+				<div className="px-4 py-2 border-b border-b-sky-500">search</div>
+				{/* Поиск группы */}
+
+				{/* Список групп */}
+				<div className="flex-auto border-b border-b-sky-500 overflow-y-auto" >
+					{groups.length
+						?
+						groups.map(group =>
+							<Group
+								key={group.id}
+								group={group}
+								openGroup={() => { openGroup(group) }}
+								openGroupSettings={() => { openGroupSettings(group) }}
+							/>
+						)
+
+						:
+						<div className="text-center">No Groups</div>
+					}
+				</div>
+				{/* Список групп */}
+
+				{/* Создать группу */}
+				<div
+					onClick={createGroup}
+					className="px-4 py-2 cursor-pointer hover:bg-sky-100 ease-in-out duration-150"
+				>Create group</div>
+				{/* Создать группу */}
+
+			</div>
+
+			{/* Настройки */}
+			{redactGroup !== null &&
+				<div className="flex flex-col min-w-full">
+					<div
+						onClick={closeGroupSettings}
+						className="px-4 py-2 border-b border-b-sky-500 cursor-pointer hover:bg-sky-100 ease-in-out duration-150"
+					>Close settings</div>
+
+					<div className="flex-auto border-b border-b-sky-500 overflow-y-auto">tabs</div>
+
+					<div className="px-4 py-2 cursor-pointer hover:bg-sky-100 ease-in-out duration-150">Open this group</div>
+				</div>
+			}
+			{/* Настройки */}
+		</div>
+	)
+
+	/*
 	return (
 		<div className="app relative flex flex-col w-80 h-96 text-base border-b-black">
 			<Header createGroup={createGroup} />
@@ -170,15 +227,9 @@ const App = () => {
 					>Delete</Button>
 				</div>
 			</Modal>
-
-			{/* <Header />
-			<main className="flex">
-				<section className={'groups flex-grow flex-shrink-0 basis-full w-full h-96 max-h-96 overflow-y-auto ease-in-out duration-150'} >
-					<button onClick={() => setShowDeleteModal(true)} className='px-4 py-2 font-semibold text-sm bg-sky-500 text-white rounded-md shadow-sm opacity-100'>Button A</button>
-				</section>
-			</main> */}
 		</div>
 	)
+	*/
 }
 
 export default App
