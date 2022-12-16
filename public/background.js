@@ -1,6 +1,8 @@
 class TabsGrouper {
 	groups = []
+	activeGroupIndex = null
 	keysForContinue = ['keysForContinue', 'redactGroup']
+	openedNewTabs = []
 
 	constructor() {
 		this.getLocalStorage()
@@ -8,6 +10,7 @@ class TabsGrouper {
 	}
 
 	initListeners() {
+		/* Общение фронта и бэка */
 		chrome.runtime.onMessage.addListener((message, sender, callback) => {
 			switch (message.function) {
 				case 'getGroups':
@@ -34,6 +37,25 @@ class TabsGrouper {
 					break
 			}
 		})
+		/* /Общение фронта и бэка */
+
+		/* Открытие вкладки */
+		chrome.tabs.onCreated.addListener(tab => {
+			if (this.activeGroupIndex) {
+				let newTab = {
+					id: tab.id,
+					active: tab.active,
+					url: tab.url,
+					title: tab.title,
+					favIconUrl: tab.favIconUrl,
+					pinned: tab.pinned,
+					groupId: this.groups[this.activeGroupIndex].id
+				}
+
+				this.groups[this.activeGroupIndex].tabs.push(newTab)
+			}
+		})
+		/* /Открытие вкладки */
 	}
 
 	openGroup(openGroupId) {
@@ -46,8 +68,12 @@ class TabsGrouper {
 
 			this.openedGroup = this.groups.filter(group => group.id === openGroupId)[0]
 			if (this.openedGroup.tabs.length === 0) {
+				this.activeGroupIndex = this.openedGroup.index
+
 				chrome.tabs.create({})
 			} else {
+				this.activeGroupIndex = this.openedGroup.index
+
 				this.openedGroup.tabs.forEach(tab => {
 					if (!tab.pinned) {
 						chrome.tabs.create({ url: tab.url })
@@ -67,6 +93,7 @@ class TabsGrouper {
 
 		if (this.groups.length === 0) {
 			newGroup.active = true
+			this.activeGroupIndex = 0
 
 			chrome.tabs.query({ currentWindow: true }, tabs => {
 				for (let tab of tabs) {

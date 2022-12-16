@@ -63,7 +63,7 @@ const App = () => {
 	}
 
 	return (
-		<div className="flex w-80 max-h-128 h-128 text-base">
+		<div className="flex w-80 max-h-128 h-128 text-base font-light">
 			<div
 				className={
 					'flex flex-col min-w-full ease-in-out duration-150 '
@@ -97,7 +97,7 @@ const App = () => {
 				{/* Создать группу */}
 				<div
 					onClick={createGroup}
-					className="px-4 py-2 cursor-pointer hover:bg-sky-100 ease-in-out duration-150"
+					className="px-4 py-2 cursor-pointer select-none hover:bg-sky-100 ease-in-out duration-150"
 				>Create group</div>
 				{/* Создать группу */}
 
@@ -106,14 +106,30 @@ const App = () => {
 			{/* Настройки */}
 			{redactGroup !== null &&
 				<div className="flex flex-col min-w-full">
+					<div className="px-4 py-2 border-b border-b-sky-500">
+						<Button
+							onClick={closeGroupSettings}
+							className="flex items-center px-1 bg-sky-500 text-white"
+						>
+							<svg className="w-3 h-3 mr-2" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+								<path fill-rule="evenodd" clip-rule="evenodd" d="M16 8C16 8.26517 15.8947 8.51948 15.7071 8.70698C15.5196 8.89448 15.2653 8.99982 15.0001 8.99982H3.41541L7.70893 13.291C7.80189 13.384 7.87564 13.4944 7.92595 13.6158C7.97626 13.7373 8.00216 13.8675 8.00216 13.9989C8.00216 14.1304 7.97626 14.2606 7.92595 14.382C7.87564 14.5035 7.80189 14.6138 7.70893 14.7068C7.61596 14.7997 7.5056 14.8735 7.38413 14.9238C7.26266 14.9741 7.13248 15 7.00101 15C6.86953 15 6.73935 14.9741 6.61788 14.9238C6.49642 14.8735 6.38605 14.7997 6.29308 14.7068L0.293755 8.70787C0.200639 8.615 0.126761 8.50467 0.0763536 8.3832C0.0259463 8.26173 0 8.13151 0 8C0 7.86849 0.0259463 7.73827 0.0763536 7.6168C0.126761 7.49533 0.200639 7.385 0.293755 7.29213L6.29308 1.29321C6.48084 1.10547 6.73548 1 7.00101 1C7.26653 1 7.52117 1.10547 7.70893 1.29321C7.89668 1.48095 8.00216 1.73558 8.00216 2.00108C8.00216 2.26659 7.89668 2.52122 7.70893 2.70896L3.41541 7.00018H15.0001C15.2653 7.00018 15.5196 7.10552 15.7071 7.29302C15.8947 7.48052 16 7.73483 16 8Z" fill="currentColor" />
+							</svg>
+							<span>Back</span>
+						</Button>
+					</div>
+
+					<div className="flex-auto border-b border-b-sky-500 overflow-y-auto">
+						{redactGroup.tabs.length
+							? redactGroup.tabs.map(tab =>
+								<Tab tab={tab} />
+							)
+							: <div className="text-center">No Tabs</div>
+						}
+					</div>
+
 					<div
-						onClick={closeGroupSettings}
-						className="px-4 py-2 border-b border-b-sky-500 cursor-pointer hover:bg-sky-100 ease-in-out duration-150"
-					>Close settings</div>
-
-					<div className="flex-auto border-b border-b-sky-500 overflow-y-auto">tabs</div>
-
-					<div className="px-4 py-2 cursor-pointer hover:bg-sky-100 ease-in-out duration-150">Open this group</div>
+						className="px-4 py-2 cursor-pointer select-none hover:bg-sky-100 ease-in-out duration-150"
+					>Open this group</div>
 				</div>
 			}
 			{/* Настройки */}
