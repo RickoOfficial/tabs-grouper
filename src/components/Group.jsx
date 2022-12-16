@@ -4,17 +4,18 @@ import { Button } from './Button'
 export function Group({ group, openGroupSettings, openGroup }) {
 
 	return (
-		<div className="flex overflow-hidden">
-			<div className="flex-auto relative pl-4 py-2 overflow-hidden whitespace-nowrap">
+		<div className="flex text-sm overflow-hidden">
+			<div
+				onClick={openGroup}
+				className="flex-auto relative pl-2 py-1 overflow-hidden whitespace-nowrap select-none cursor-pointer hover:bg-slate-100 ease-in-out duration-150"
+			>
 				{group.name}
 				<div className="absolute top-0 right-0 w-8 h-full bg-gradient-to-r from-white/0 via-white/90 to-white"></div>
 			</div>
-			<div className="pr-4 py-2">
-				<Button
-					onClick={() => { openGroupSettings() }}
-					className="px-1 text-white bg-sky-500"
-				>Settings</Button>
-			</div>
+			<Button
+				onClick={() => { openGroupSettings() }}
+				className="mr-1 my-1 bg-sky-500 text-white"
+			>Settings</Button>
 		</div>
 	)
 	/*
