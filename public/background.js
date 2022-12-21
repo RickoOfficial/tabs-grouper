@@ -19,33 +19,30 @@ class TabsGrouper {
 	}
 	/* /Инициализация слушателей */
 
-	async onMessageListener(message, sender, callback) {
+	onMessageListener(message, sender, callback) {
 		switch (message.function) {
 			case 'getGroups':
 				callback(TG.groups)
 				return true
 			case 'openGroup':
-				await TG.openGroup(message.openGroupId)
+				TG.openGroup(message.openGroupId)
 				return true
 				break
 			case 'createGroup':
-				let group = await TG.createGroup()
-				console.log(group)
-				callback(group)
-				await TG.setLocalStorage()
-				// TG.createGroup()
-				// 	.then(group => {
-				// 		callback(group)
-				// 		TG.setLocalStorage()
-				// 	})
+				TG.createGroup()
+					.then(group => {
+						console.log(group)
+						callback(group)
+						TG.setLocalStorage()
+					})
 				return true
 				break
 			case 'updateGroup':
-				await TG.updateGroup(message.groupData)
+				TG.updateGroup(message.groupData)
 				return true
 				break
 			case 'deleteGroup':
-				await TG.deleteGroup(message.deleteGroupId)
+				TG.deleteGroup(message.deleteGroupId)
 				return true
 				break
 			default:
