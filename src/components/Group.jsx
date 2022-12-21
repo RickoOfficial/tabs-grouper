@@ -4,13 +4,13 @@ import { Button } from './Button'
 export function Group({ group, openGroupSettings, openGroup }) {
 
 	return (
-		<div className="flex text-sm overflow-hidden">
+		<div className="flex text-sm overflow-hidden" id={group.id}>
 			<div
 				onClick={openGroup}
 				className="flex-auto relative pl-2 py-1 overflow-hidden whitespace-nowrap select-none cursor-pointer hover:bg-slate-100 ease-in-out duration-150"
 			>
 				{group.name}
-				<div className="absolute top-0 right-0 w-8 h-full bg-gradient-to-r from-white/0 via-white/90 to-white"></div>
+				<div className="absolute top-0 right-0 w-8 h-full bg-gradient-to-r from-slate-50/0 via-slate-50/90 to-slate-50"></div>
 			</div>
 			<Button
 				onClick={() => { openGroupSettings() }}

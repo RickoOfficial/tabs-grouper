@@ -1,0 +1,243 @@
+importScripts("js/Group.js")
+
+class TabsGrouper {
+	groups = []
+	activeGroupIndex = null
+	keysForContinue = ['keysForContinue']
+
+	constructor() {
+		this.getLocalStorage()
+		this.initListeners()
+	}
+
+	initListeners() {
+		/* Общение фронта и бэка */
+		chrome.runtime.onMessage.addListener((message, sender, callback) => {
+			switch (message.function) {
+				case 'getGroups':
+					callback(this.groups)
+					return true
+				case 'openGroup':
+					this.openGroup(message.openGroupId)
+					return true
+					break
+				case 'createGroup':
+					this.createGroup(callback)
+					return true
+					break
+				case 'saveRedactGroup':
+					this.saveRedactGroup(message.redactGroup)
+					return true
+					break
+				case 'deleteGroup':
+					this.deleteGroup(message.deleteGroupId)
+					return true
+					break
+				default:
+					return false
+					break
+			}
+		})
+		/* /Общение фронта и бэка */
+
+		/* Открытие вкладки */
+		chrome.tabs.onCreated.addListener(this.onCreatedListener)
+		/* /Открытие вкладки */
+
+		/* Обновление вкладки */
+		chrome.tabs.onUpdated.addListener(this.onUpdatedListener)
+		/* /Обновление вкладки */
+	}
+
+	onCreatedListener(tab) {
+		if (this.activeGroupIndex === null) return false
+
+		console.clear()
+		console.log(this)
+		console.log(this.groups)
+		console.log(this.activeGroupIndex)
+		console.log(this.groups[this.activeGroupIndex])
+		
+		this.groups[this.activeGroupIndex].addTab(tab)
+
+		setTimeout(() => {
+			this.setLocalStorage()
+		}, 1)
+	}
+
+	onUpdatedListener(tabId, changeIndo, tabData) {
+		if (this.activeGroupIndex === null) return false
+
+		this.groups[this.activeGroupIndex].updateTab(tabData)
+
+		setTimeout(() => {
+			this.setLocalStorage()
+		}, 1)
+	}
+
+	openGroup(openGroupId) {
+		this.groups[this.activeGroupIndex].active = false
+
+		for (let i in this.groups) {
+			if (this.groups[i].id === openGroupId) {
+				this.groups[i].active = true
+				this.activeGroupIndex = Number(i)
+			}
+		}
+
+		chrome.tabs.query({ currentWindow: true }, tabs => {
+			if (this.groups[this.activeGroupIndex].tabs.length === 0) {
+				for (let tab of tabs) {
+					chrome.tabs.remove(tab.id)
+				}
+				chrome.tabs.create({ url: 'chrome://newtab' })
+			} else {
+				for (let i in this.groups[this.activeGroupIndex].tabs) {
+					if (tabs[i]) {
+						chrome.tabs.update(tabs[i].id, {
+							url: this.groups[this.activeGroupIndex].tabs[i].url || 'chrome://newtab',
+							active: this.groups[this.activeGroupIndex].tabs[i].active
+						}, tab => {
+							chrome.tabs.move(tab.id, { index: this.groups[this.activeGroupIndex].tabs[i].index })
+						})
+					} else {
+						chrome.tabs.create({
+							url: this.groups[this.activeGroupIndex].tabs[i].url || 'chrome://newtab',
+							active: this.groups[this.activeGroupIndex].tabs[i].active
+						}, tab => {
+							chrome.tabs.move(tab.id, { index: this.groups[this.activeGroupIndex].tabs[i].index })
+						})
+					}
+				}
+			}
+
+			setTimeout(() => {
+				this.setLocalStorage()
+			}, 1)
+		})
+	}
+
+	createGroup(callback) {
+		let newGroup = new Group()
+
+		if (this.groups.length === 0) {
+			newGroup.active = true
+			this.activeGroupIndex = Number(newGroup.index)
+
+			chrome.tabs.query({ currentWindow: true }, tabs => {
+				for (let tab of tabs) {
+					newGroup.addTab(tab)
+				}
+
+				this.groups.push(newGroup)
+				setTimeout(() => {
+					this.setLocalStorage()
+				}, 1)
+				callback(newGroup)
+			})
+		} else {
+			newGroup.active = false
+
+			this.groups.push(newGroup)
+			setTimeout(() => {
+				this.setLocalStorage()
+			}, 1)
+			callback(newGroup)
+		}
+	}
+
+	saveRedactGroup(redactGroup) {
+		for (let i in this.groups) {
+			if (this.groups[i].id === redactGroup.id) {
+				this.groups[i].update(redactGroup)
+				setTimeout(() => {
+					this.setLocalStorage()
+				}, 1)
+				return true
+			}
+		}
+		return false
+	}
+
+	deleteGroup(deleteGroupId) {
+		for (let i in this.groups) {
+			if (this.groups[i].id === deleteGroupId) {
+				this.groups.splice(i, 1)
+
+				if (this.activeGroupIndex == i) {
+					this.activeGroupIndex = null
+				}
+
+				setTimeout(() => {
+					this.setLocalStorage()
+				}, 1)
+
+				return true
+			}
+		}
+	}
+
+	faviconToBase64(favIconUrl, callback) {
+		fetch(favIconUrl)
+			.then(response => response.blob())
+			.then(blob => {
+				let reader = new FileReader()
+				reader.onloadend = () => {
+					callback(reader.result)
+				}
+				reader.readAsDataURL(blob)
+			})
+			.catch(error => { callback(favIconUrl) })
+	}
+
+	getLocalStorage() {
+		chrome.storage.local.get(['TabsGrouper']).then(storage => {
+			if (storage !== undefined && storage.TabsGrouper !== undefined) {
+				for (let key in storage.TabsGrouper) {
+					if (this.keysForContinue.indexOf(key) === -1) {
+						this[key] = storage.TabsGrouper[key]
+					}
+				}
+				if (this.groups.length) {
+					for (let i in this.groups) {
+						this.groups[i] = new Group(this.groups[i])
+					}
+				}
+			} else {
+				setTimeout(() => {
+					this.setLocalStorage()
+				}, 1)
+			}
+		})
+	}
+
+	setLocalStorage() {
+		for (let i in this.groups) {
+			for (let j in this.groups[i].tabs) {
+				if (this.groups[i].tabs[j].favIconUrl && this.groups[i].tabs[j].favIconUrl.indexOf('data:') === -1) {
+					try {
+						this.faviconToBase64(this.groups[i].tabs[j].favIconUrl, base64 => {
+							this.groups[i].tabs[j].favIconUrl = base64
+						})
+					} catch (error) { }
+				}
+			}
+		}
+
+		setTimeout(() => {
+			chrome.storage.local.set({ 'TabsGrouper': this })
+		}, 1)
+	}
+
+	generateId(length) {
+		let result = '';
+		let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+		let charactersLength = characters.length;
+		for (let i = 0; i < length; i++) {
+			result += characters.charAt(Math.floor(Math.random() * charactersLength));
+		}
+		return result;
+	}
+}
+
+const TG = new TabsGrouper()
