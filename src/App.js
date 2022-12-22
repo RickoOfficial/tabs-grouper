@@ -14,16 +14,34 @@ const App = () => {
 	const [newName, setNewName] = useState(null)
 	const [showRenameModal, setShowRenameModal] = useState(false)
 
-	const getGroups = () => {
-		chrome.runtime.sendMessage({ function: 'getGroups' }, (response) => {
-			if(response.length) {
-				setGroups(response)
-			} else {
-				setTimeout(() => {
-					getGroups()
-				}, 300)
-			}
+	const sendMessage = (message) => {
+		return new Promise((resolve, reject) => {
+			chrome.runtime.sendMessage(message, response => {
+				if (response.status === 'complete') {
+					resolve(response)
+				} else {
+					reject('Something wrong')
+				}
+			})
 		})
+	}
+
+	const getGroups = async () => {
+		console.log('getGroups1')
+		let response = await sendMessage({ action: 'getGroups' })
+		console.log(response)
+		console.log('getGroups2')
+
+
+		// chrome.runtime.sendMessage({ function: 'getGroups' }, (response) => {
+		// 	if (response.length) {
+		// 		setGroups(response)
+		// 	} else {
+		// 		setTimeout(() => {
+		// 			getGroups()
+		// 		}, 300)
+		// 	}
+		// })
 	}
 
 	useEffect(() => {
@@ -36,7 +54,6 @@ const App = () => {
 
 	const createGroup = () => {
 		chrome.runtime.sendMessage({ function: 'createGroup' }, response => {
-			console.log(response)
 			if (groups.length > 0) {
 				setGroups([...groups, response])
 			} else {
