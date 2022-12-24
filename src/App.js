@@ -20,28 +20,21 @@ const App = () => {
 				if (response.status === 'complete') {
 					resolve(response)
 				} else {
-					reject('Something wrong')
+					reject(response)
 				}
 			})
 		})
 	}
 
-	const getGroups = async () => {
-		console.log('getGroups1')
+	const getGroups = async (i = 0) => {
 		let response = await sendMessage({ action: 'getGroups' })
-		console.log(response)
-		console.log('getGroups2')
-
-
-		// chrome.runtime.sendMessage({ function: 'getGroups' }, (response) => {
-		// 	if (response.length) {
-		// 		setGroups(response)
-		// 	} else {
-		// 		setTimeout(() => {
-		// 			getGroups()
-		// 		}, 300)
-		// 	}
-		// })
+		if (response.groups.length) {
+			setGroups(response.groups)
+		} else {
+			setTimeout(() => {
+				getGroups(i++)
+			}, 300)
+		}
 	}
 
 	useEffect(() => {
@@ -52,14 +45,22 @@ const App = () => {
 		chrome.runtime.sendMessage({ function: 'openGroup', openGroupId: group.id })
 	}
 
-	const createGroup = () => {
-		chrome.runtime.sendMessage({ function: 'createGroup' }, response => {
-			if (groups.length > 0) {
-				setGroups([...groups, response])
-			} else {
-				setGroups([response])
-			}
-		})
+	const createGroup = async () => {
+		let response = await sendMessage({ action: 'createGroup' })
+		console.log(response)
+		if (groups.length > 0) {
+			setGroups([...groups, response.group])
+		} else {
+			setGroups([response.group])
+		}
+
+		// chrome.runtime.sendMessage({ function: 'createGroup' }, response => {
+		// 	if (groups.length > 0) {
+		// 		setGroups([...groups, response])
+		// 	} else {
+		// 		setGroups([response])
+		// 	}
+		// })
 	}
 
 	const openGroupSettings = (group) => {
