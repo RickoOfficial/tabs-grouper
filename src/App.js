@@ -14,47 +14,27 @@ const App = () => {
 	const [newName, setNewName] = useState(null)
 	const [showRenameModal, setShowRenameModal] = useState(false)
 
-	const port = chrome.runtime.connect({ name: 'TabsGrouper' })
+	const [port, setPort] = useState(chrome.runtime.connect({ name: 'TabsGrouper' }))
 
-	port.onMessage.addListener = (message) => {
-		console.log(message)
+	port.onMessage.addListener(message => {
 		switch (message.action) {
-			case 'setGroups':
-				setGroups(message.groups)
-				return true
+			case 'getGroups':
+				setGroups(message.data)
+				break;
+			case 'createGroup':
+				console.log(groups.length)
+				if (groups.length > 0) {
+					setGroups([...groups, message.data])
+				} else {
+					setGroups([message.data])
+				}
+				break;
 			default: break;
 		}
-	}
-
-	// const sendMessage = (message) => {
-	// 	return new Promise((resolve, reject) => {
-	// 		chrome.runtime.sendMessage(message, response => {
-	// 			if (response.status === 'complete') {
-	// 				resolve(response)
-	// 			} else {
-	// 				reject('Something wrong')
-	// 			}
-	// 		})
-	// 	})
-	// }
+	})
 
 	const getGroups = () => {
 		port.postMessage({ action: 'getGroups' })
-		// console.log('getGroups1')
-		// let response = await sendMessage({ action: 'getGroups' })
-		// console.log(response)
-		// console.log('getGroups2')
-
-
-		// chrome.runtime.sendMessage({ function: 'getGroups' }, (response) => {
-		// 	if (response.length) {
-		// 		setGroups(response)
-		// 	} else {
-		// 		setTimeout(() => {
-		// 			getGroups()
-		// 		}, 300)
-		// 	}
-		// })
 	}
 
 	useEffect(() => {
@@ -66,13 +46,7 @@ const App = () => {
 	}
 
 	const createGroup = () => {
-		chrome.runtime.sendMessage({ function: 'createGroup' }, response => {
-			if (groups.length > 0) {
-				setGroups([...groups, response])
-			} else {
-				setGroups([response])
-			}
-		})
+		port.postMessage({ action: 'createGroup' })
 	}
 
 	const openGroupSettings = (group) => {

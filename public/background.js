@@ -1,5 +1,5 @@
-// importScripts("js/Consts.js")
-// importScripts("js/Group.js")
+importScripts("js/Utils.js")
+importScripts("js/Group.js")
 
 class TabsGrouper {
 	groups = []
@@ -26,13 +26,43 @@ class TabsGrouper {
 	}
 
 	async onMessageListener(message, port) {
-		if (message.action == 'getGroups') {
-			setTimeout(() => {
-				console.log(message.action == 'getGroups')
-				port.postMessage({ action: 'setGroups', groups: 'массив групп' })
-			}, 3000)
+		switch (message.action) {
+			case 'getGroups':
+				port.postMessage({ action: message.action, data: this.groups })
+				break;
+			case 'createGroup':
+				let newGroup = await this.createGroup()
+				port.postMessage({ action: message.action, data: newGroup })
+				break;
+			default: break;
 		}
-		console.log(`bg\n`, message)
+	}
+
+	async createGroup() {
+		let newGroup = new Group()
+
+		if (this.groups.length === 0) {
+			newGroup.active = true
+			this.activeGroupIndex = 0
+
+			let tabs = await chrome.tabs.query({ currentWindow: true })
+			for (let tab of tabs) {
+				await newGroup.addTab(tab)
+			}
+		} else {
+			newGroup.active = false
+			newGroup.addTab({
+				id: '',
+				url: 'chrome://newtab',
+				title: 'New Tab',
+				active: true,
+				index: 0,
+				favIconUrl: ''
+			})
+		}
+
+		this.groups.push(newGroup)
+		return newGroup
 	}
 
 	/* Получение из localStorage */
@@ -54,37 +84,6 @@ class TabsGrouper {
 		return await chrome.storage.local.set({ 'TabsGrouper': TG })
 	}
 	/* /Запись в localStorage */
-
-	/* Конвертация фавиконки сайта в base64 */
-	async faviconToBase64(favIconUrl) {
-		try {
-			let response = await fetch(favIconUrl)
-			let blob = await response.blob()
-			let reader = new FileReader()
-			let base64 = await new Promise((resolve, reject) => {
-				reader.onloadend = () => {
-					resolve(reader.result)
-				}
-				reader.readAsDataURL(blob)
-			})
-			return await base64
-		} catch (error) {
-			return favIconUrl
-		}
-	}
-	/* /Конвертация фавиконки сайта в base64 */
-
-	/* Генерация рандомного id для групп */
-	generateId(length = 12) {
-		let result = '';
-		let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-		let charactersLength = characters.length;
-		for (let i = 0; i < length; i++) {
-			result += characters.charAt(Math.floor(Math.random() * charactersLength));
-		}
-		return result;
-	}
-	/* /Генерация рандомного id для групп */
 }
 
 const TG = new TabsGrouper()
