@@ -14,27 +14,47 @@ const App = () => {
 	const [newName, setNewName] = useState(null)
 	const [showRenameModal, setShowRenameModal] = useState(false)
 
-	const sendMessage = (message) => {
-		return new Promise((resolve, reject) => {
-			chrome.runtime.sendMessage(message, response => {
-				if (response.status === 'complete') {
-					resolve(response)
-				} else {
-					reject(response)
-				}
-			})
-		})
+	const port = chrome.runtime.connect({ name: 'TabsGrouper' })
+
+	port.onMessage.addListener = (message) => {
+		console.log(message)
+		switch (message.action) {
+			case 'setGroups':
+				setGroups(message.groups)
+				return true
+			default: break;
+		}
 	}
 
-	const getGroups = async (i = 0) => {
-		let response = await sendMessage({ action: 'getGroups' })
-		if (response.groups.length) {
-			setGroups(response.groups)
-		} else {
-			setTimeout(() => {
-				getGroups(i++)
-			}, 300)
-		}
+	// const sendMessage = (message) => {
+	// 	return new Promise((resolve, reject) => {
+	// 		chrome.runtime.sendMessage(message, response => {
+	// 			if (response.status === 'complete') {
+	// 				resolve(response)
+	// 			} else {
+	// 				reject('Something wrong')
+	// 			}
+	// 		})
+	// 	})
+	// }
+
+	const getGroups = () => {
+		port.postMessage({ action: 'getGroups' })
+		// console.log('getGroups1')
+		// let response = await sendMessage({ action: 'getGroups' })
+		// console.log(response)
+		// console.log('getGroups2')
+
+
+		// chrome.runtime.sendMessage({ function: 'getGroups' }, (response) => {
+		// 	if (response.length) {
+		// 		setGroups(response)
+		// 	} else {
+		// 		setTimeout(() => {
+		// 			getGroups()
+		// 		}, 300)
+		// 	}
+		// })
 	}
 
 	useEffect(() => {
@@ -45,22 +65,14 @@ const App = () => {
 		chrome.runtime.sendMessage({ function: 'openGroup', openGroupId: group.id })
 	}
 
-	const createGroup = async () => {
-		let response = await sendMessage({ action: 'createGroup' })
-		console.log(response)
-		if (groups.length > 0) {
-			setGroups([...groups, response.group])
-		} else {
-			setGroups([response.group])
-		}
-
-		// chrome.runtime.sendMessage({ function: 'createGroup' }, response => {
-		// 	if (groups.length > 0) {
-		// 		setGroups([...groups, response])
-		// 	} else {
-		// 		setGroups([response])
-		// 	}
-		// })
+	const createGroup = () => {
+		chrome.runtime.sendMessage({ function: 'createGroup' }, response => {
+			if (groups.length > 0) {
+				setGroups([...groups, response])
+			} else {
+				setGroups([response])
+			}
+		})
 	}
 
 	const openGroupSettings = (group) => {

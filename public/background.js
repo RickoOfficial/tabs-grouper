@@ -1,60 +1,90 @@
-importScripts("js/Utils.js")
-importScripts("js/Group.js")
+// importScripts("js/Consts.js")
+// importScripts("js/Group.js")
 
 class TabsGrouper {
 	groups = []
 	activeGroupIndex = undefined
 
 	constructor() {
+		// this.getLocalStorage()
+		// 	.then(() => {
+		// 		this.initListeners()
+		// 	})
 		this.initListeners()
 	}
 
 	initListeners() {
-		chrome.runtime.onMessage.addListener(this.onMessageListener)
+		this.onConnectListener()
 	}
 
-	async onMessageListener(message, sender, callback) {
-		switch (message.action) {
-			case 'getGroups':
-				callback({
-					status: 'complete',
-					groups: TG.groups
-				})
-				return true
-				break
-			case 'createGroup':
-				setTimeout(() => {
-					callback({status: 'complete'})
-				}, 3000)
-				// let newGroup = await TG.createGroup()
-				// callback({
-				// 	status: 'complete',
-				// 	group: newGroup
-				// })
-				return true
-			default:
-				callback({
-					status: 'error',
-					message: 'action not specified',
-					request: message
-				})
-				return false
-				break
+	onConnectListener() {
+		chrome.runtime.onConnect.addListener(port => {
+			port.onMessage.addListener(message => {
+				this.onMessageListener(message, port)
+			})
+		})
+	}
+
+	async onMessageListener(message, port) {
+		if (message.action == 'getGroups') {
+			setTimeout(() => {
+				console.log(message.action == 'getGroups')
+				port.postMessage({ action: 'setGroups', groups: 'массив групп' })
+			}, 3000)
+		}
+		console.log(`bg\n`, message)
+	}
+
+	/* Получение из localStorage */
+	async getLocalStorage() {
+		let storage = await chrome.storage.local.get(['TabsGrouper'])
+		if (storage !== undefined && storage.TabsGrouper !== undefined) {
+			this.activeGroupIndex = storage.TabsGrouper.activeGroupIndex
+			for (let storageGroup of storage.TabsGrouper.groups) {
+				this.groups.push(new Group(storageGroup))
+			}
+		} else {
+			await this.setLocalStorage()
 		}
 	}
-
-	async createGroup() {
-		let newGroup = await new Promise((resolve, reject) => {
-			resolve(new Group())
-		})
-		return newGroup
-	}
+	/* /Получение из localStorage */
 
 	/* Запись в localStorage */
 	async setLocalStorage() {
-		return await chrome.storage.local.set({ 'TabsGrouper': this })
+		return await chrome.storage.local.set({ 'TabsGrouper': TG })
 	}
 	/* /Запись в localStorage */
+
+	/* Конвертация фавиконки сайта в base64 */
+	async faviconToBase64(favIconUrl) {
+		try {
+			let response = await fetch(favIconUrl)
+			let blob = await response.blob()
+			let reader = new FileReader()
+			let base64 = await new Promise((resolve, reject) => {
+				reader.onloadend = () => {
+					resolve(reader.result)
+				}
+				reader.readAsDataURL(blob)
+			})
+			return await base64
+		} catch (error) {
+			return favIconUrl
+		}
+	}
+	/* /Конвертация фавиконки сайта в base64 */
+
+	/* Генерация рандомного id для групп */
+	generateId(length = 12) {
+		let result = '';
+		let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+		let charactersLength = characters.length;
+		for (let i = 0; i < length; i++) {
+			result += characters.charAt(Math.floor(Math.random() * charactersLength));
+		}
+		return result;
+	}
+	/* /Генерация рандомного id для групп */
 }
 
 const TG = new TabsGrouper()
