@@ -6,11 +6,10 @@ class TabsGrouper {
 	activeGroupIndex = undefined
 
 	constructor() {
-		// this.getLocalStorage()
-		// 	.then(() => {
-		// 		this.initListeners()
-		// 	})
-		this.initListeners()
+		utils.getLocalStorage()
+			.then(() => {
+				this.initListeners()
+			})
 	}
 
 	initListeners() {
@@ -34,6 +33,12 @@ class TabsGrouper {
 				let newGroup = await this.createGroup()
 				port.postMessage({ action: message.action, data: newGroup })
 				break;
+			case 'updateGroup':
+				this.updateGroup(message.redactGroup)
+				break;
+			case 'deleteGroup':
+				this.deleteGroup(message.deleteGroupId)
+				break;
 			default: break;
 		}
 	}
@@ -49,6 +54,14 @@ class TabsGrouper {
 			for (let tab of tabs) {
 				await newGroup.addTab(tab)
 			}
+
+			this.groups.push(newGroup)
+
+			setTimeout(() => {
+				utils.setLocalStorage()
+			}, 1)
+
+			return newGroup
 		} else {
 			newGroup.active = false
 			newGroup.addTab({
@@ -59,31 +72,43 @@ class TabsGrouper {
 				index: 0,
 				favIconUrl: ''
 			})
-		}
 
-		this.groups.push(newGroup)
-		return newGroup
+			this.groups.push(newGroup)
+
+			setTimeout(() => {
+				utils.setLocalStorage()
+			}, 1)
+
+			return newGroup
+		}
 	}
 
-	/* Получение из localStorage */
-	async getLocalStorage() {
-		let storage = await chrome.storage.local.get(['TabsGrouper'])
-		if (storage !== undefined && storage.TabsGrouper !== undefined) {
-			this.activeGroupIndex = storage.TabsGrouper.activeGroupIndex
-			for (let storageGroup of storage.TabsGrouper.groups) {
-				this.groups.push(new Group(storageGroup))
+	updateGroup(redactGroup) {
+		for (let i in this.groups) {
+			if (this.groups[i].id === redactGroup.id) {
+				this.groups[i].update(redactGroup)
+
+				setTimeout(() => {
+					utils.setLocalStorage()
+				}, 1)
 			}
-		} else {
-			await this.setLocalStorage()
 		}
 	}
-	/* /Получение из localStorage */
 
-	/* Запись в localStorage */
-	async setLocalStorage() {
-		return await chrome.storage.local.set({ 'TabsGrouper': TG })
+	deleteGroup(deleteGroupId) {
+		for (let i in this.groups) {
+			if (this.groups[i].id === deleteGroupId) {
+				this.groups.splice(i, 1)
+				if (this.groups.length === 0) {
+					this.activeGroupIndex = undefined
+				}
+
+				setTimeout(() => {
+					utils.setLocalStorage()
+				}, 1)
+			}
+		}
 	}
-	/* /Запись в localStorage */
 }
 
 const TG = new TabsGrouper()

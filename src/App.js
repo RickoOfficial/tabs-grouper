@@ -14,6 +14,8 @@ const App = () => {
 	const [newName, setNewName] = useState(null)
 	const [showRenameModal, setShowRenameModal] = useState(false)
 
+	const [groupIsCreating, setGroupIsCreating] = useState(false)
+
 	const [port, setPort] = useState(chrome.runtime.connect({ name: 'TabsGrouper' }))
 
 	port.onMessage.addListener(message => {
@@ -22,7 +24,8 @@ const App = () => {
 				setGroups(message.data)
 				break;
 			case 'createGroup':
-				console.log(groups.length)
+				setGroupIsCreating(false)
+
 				if (groups.length > 0) {
 					setGroups([...groups, message.data])
 				} else {
@@ -46,7 +49,9 @@ const App = () => {
 	}
 
 	const createGroup = () => {
+		if (groupIsCreating) return
 		port.postMessage({ action: 'createGroup' })
+		setGroupIsCreating(true)
 	}
 
 	const openGroupSettings = (group) => {
@@ -61,19 +66,24 @@ const App = () => {
 
 	const updateGroup = () => {
 		redactGroup.name = newName
-		chrome.runtime.sendMessage({ function: 'updateGroup', groupData: redactGroup })
 		setGroups(groups.map(group => group.id === redactGroup.id ? redactGroup : group))
+
+		port.postMessage({ action: 'updateGroup', redactGroup: redactGroup })
 	}
 
 	const deleteGroup = () => {
 		setShowDeleteModal(false)
 		setGroups(groups.filter(group => group.id !== redactGroup.id))
 		closeGroupSettings()
-		chrome.runtime.sendMessage({ function: 'deleteGroup', deleteGroupId: redactGroup.id })
+
+		port.postMessage({ action: 'deleteGroup', deleteGroupId: redactGroup.id })
 	}
 
 	return (
-		<div className="flex w-80 max-h-128 h-128 text-slate-700 text-sm font-medium">
+		<div className={
+			'flex w-80 max-h-128 h-128 text-slate-700 text-sm font-medium '
+			+ (groupIsCreating ? 'cursor-wait' : '')
+		}>
 			<div className="flex flex-col min-w-full bg-slate-50">
 
 				{/* Поиск группы */}
@@ -81,7 +91,7 @@ const App = () => {
 				{/* Поиск группы */}
 
 				{/* Список групп */}
-				<div className="flex-auto border-b border-b-slate-300 overflow-y-auto" >
+				<div className="flex-auto border-b border-b-slate-300 overflow-y-auto">
 					{groups.length
 						?
 						groups.map(group =>
@@ -94,7 +104,22 @@ const App = () => {
 						)
 
 						:
-						<div className="text-center">No Groups</div>
+						!groupIsCreating
+							?
+							<div className="text-center">No Groups</div>
+
+							:
+							<></>
+					}
+					{groupIsCreating
+						?
+						<div className="relative flex justify-center items-center gap-2 pl-2 py-1 overflow-hidden">
+							<div className="w-4 h-4 border-2 border-t-sky-500 border-sky-200 rounded-full animate-spin select-none"></div>
+							<div>Group is created</div>
+						</div>
+
+						:
+						<></>
 					}
 				</div>
 				{/* Список групп */}
@@ -102,7 +127,11 @@ const App = () => {
 				{/* Создать группу */}
 				<div
 					onClick={createGroup}
-					className="px-4 py-2 cursor-pointer select-none hover:bg-slate-100 ease-in-out duration-150"
+					className={
+						'px-4 py-2 cursor-pointer select-none hover:bg-slate-100 ease-in-out duration-150 '
+						+ (groupIsCreating ? 'cursor-not-allowed' : '')
+					}
+					disabled={groupIsCreating}
 				>Create group</div>
 				{/* Создать группу */}
 

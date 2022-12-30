@@ -13,6 +13,10 @@ class Group {
 		}
 	}
 
+	update(redactGroup) {
+		this.name = redactGroup.name
+	}
+
 	async addTab(tabData) {
 		let newTab = {
 			id: tabData.id,
@@ -24,8 +28,5 @@ class Group {
 		}
 
 		this.tabs[newTab.index] = newTab
-
-		let base64 = await utils.faviconToBase64(newTab.favIconUrl)
-		this.tabs[newTab.index].favIconUrl = base64
 	}
 }

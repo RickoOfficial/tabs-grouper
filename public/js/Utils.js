@@ -29,6 +29,33 @@ class Utils {
 		return result;
 	}
 	/* /Генерация рандомного id */
+
+	/* Получение из localStorage */
+	async getLocalStorage() {
+		let storage = await chrome.storage.local.get(['TabsGrouper'])
+		if (storage !== undefined && storage.TabsGrouper !== undefined) {
+			TG.activeGroupIndex = storage.TabsGrouper.activeGroupIndex
+			for (let storageGroup of storage.TabsGrouper.groups) {
+				TG.groups.push(new Group(storageGroup))
+			}
+		} else {
+			await this.setLocalStorage()
+		}
+	}
+	/* /Получение из localStorage */
+
+	/* Запись в localStorage */
+	async setLocalStorage() {
+		for (let group of TG.groups) {
+			for (let tab of group.tabs) {
+				tab.favIconUrl = await utils.faviconToBase64(tab.favIconUrl)
+				console.log(tab)
+			}
+		}
+
+		return await chrome.storage.local.set({ 'TabsGrouper': TG })
+	}
+	/* /Запись в localStorage */
 }
 
 const utils = new Utils()
