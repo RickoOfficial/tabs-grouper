@@ -49,7 +49,6 @@ class Utils {
 		for (let group of TG.groups) {
 			for (let tab of group.tabs) {
 				tab.favIconUrl = await utils.faviconToBase64(tab.favIconUrl)
-				console.log(tab)
 			}
 		}
 

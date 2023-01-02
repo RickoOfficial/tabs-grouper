@@ -4,6 +4,7 @@ importScripts("js/Group.js")
 class TabsGrouper {
 	groups = []
 	activeGroupIndex = undefined
+	groupIsOpenNow = undefined
 
 	constructor() {
 		utils.getLocalStorage()
@@ -14,6 +15,9 @@ class TabsGrouper {
 
 	initListeners() {
 		this.onConnectListener()
+
+		chrome.tabs.onCreated.addListener(this.onCreatedListener)
+		chrome.tabs.onUpdated.addListener(this.onUpdatedListener)
 	}
 
 	onConnectListener() {
@@ -24,10 +28,47 @@ class TabsGrouper {
 		})
 	}
 
+	onCreatedListener(tab) {
+		if (TG.groupIsOpenNow) return
+
+		if (TG.activeGroupIndex !== undefined) {
+			TG.groups[TG.activeGroupIndex].addTab(tab)
+		}
+	}
+
+	onUpdatedListener(tabId, changeInfo, tabData) {
+		if (TG.groupIsOpenNow) return
+
+		if (changeInfo.status === 'complete') {
+			console.log(tabData)
+			
+			for (let i in TG.groups) {
+				for (let j in TG.groups[i].tabs) {
+					if (TG.groups[i].tabs[j].id === tabId) {
+						TG.groups[i].tabs[j].title = tabData.title
+						TG.groups[i].tabs[j].favIconUrl = tabData.favIconUrl
+						TG.groups[i].tabs[j].url = tabData.url
+						TG.groups[i].tabs[j].index = tabData.index
+						TG.groups[i].tabs[j].active = tabData.active
+
+						setTimeout(() => {
+							utils.setLocalStorage()
+						}, 1)
+
+						return true
+					}
+				}
+			}
+		}
+	}
+
 	async onMessageListener(message, port) {
 		switch (message.action) {
 			case 'getGroups':
 				port.postMessage({ action: message.action, data: this.groups })
+				break;
+			case 'openGroup':
+				this.openGroup(message.groupId)
 				break;
 			case 'createGroup':
 				let newGroup = await this.createGroup()
@@ -43,6 +84,68 @@ class TabsGrouper {
 		}
 	}
 
+	async openGroup(groupId) {
+		this.groupIsOpenNow = true
+
+		let tabs = await chrome.tabs.query({ currentWindow: true })
+
+		for (let i in this.groups) {
+			if (this.groups[i].id === groupId) {
+				this.groups[this.activeGroupIndex].active = false
+
+				this.activeGroupIndex = Number(i)
+				this.groups[i].active = true
+				break
+			}
+		}
+
+		if (tabs.length > this.groups[this.activeGroupIndex].tabs.length) {
+			for (let i in tabs) {
+				if (!this.groups[this.activeGroupIndex].tabs[i]) {
+					await chrome.tabs.remove(tabs[i].id)
+				} else {
+					let tab = await chrome.tabs.create({
+						url: this.groups[this.activeGroupIndex].tabs[i].url,
+						index: this.groups[this.activeGroupIndex].tabs[i].index,
+						active: this.groups[this.activeGroupIndex].tabs[i].active,
+					})
+
+					this.groups[this.activeGroupIndex].tabs[i].id = tab.id
+
+					await chrome.tabs.remove(tabs[i].id)
+				}
+			}
+		} else {
+			for (let i in this.groups[this.activeGroupIndex].tabs) {
+				if (!tabs[i]) {
+					let tabData = await chrome.tabs.create({
+						url: this.groups[this.activeGroupIndex].tabs[i].url,
+						index: this.groups[this.activeGroupIndex].tabs[i].index,
+						active: this.groups[this.activeGroupIndex].tabs[i].active,
+					})
+
+					this.groups[this.activeGroupIndex].tabs[i].id = tabData.id
+				} else {
+					let tab = await chrome.tabs.create({
+						url: this.groups[this.activeGroupIndex].tabs[i].url,
+						index: this.groups[this.activeGroupIndex].tabs[i].index,
+						active: this.groups[this.activeGroupIndex].tabs[i].active,
+					})
+
+					this.groups[this.activeGroupIndex].tabs[i].id = tab.id
+
+					await chrome.tabs.remove(tabs[i].id)
+				}
+			}
+		}
+
+		this.groupIsOpenNow = false
+
+		setTimeout(() => {
+			utils.setLocalStorage()
+		}, 1)
+	}
+
 	async createGroup() {
 		let newGroup = new Group()
 
@@ -51,8 +154,8 @@ class TabsGrouper {
 			this.activeGroupIndex = 0
 
 			let tabs = await chrome.tabs.query({ currentWindow: true })
-			for (let tab of tabs) {
-				await newGroup.addTab(tab)
+			for (let tab of await tabs) {
+				newGroup.addTab(tab)
 			}
 
 			this.groups.push(newGroup)

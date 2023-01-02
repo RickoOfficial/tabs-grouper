@@ -45,7 +45,12 @@ const App = () => {
 	}, [])
 
 	const openGroup = (group) => {
-		chrome.runtime.sendMessage({ function: 'openGroup', openGroupId: group.id })
+		if (group.active) return
+
+		port.postMessage({ action: 'openGroup', groupId: group.id })
+
+		let window = chrome.extension.getViews({ type: "popup" })
+		window[0].close()
 	}
 
 	const createGroup = () => {
@@ -82,7 +87,7 @@ const App = () => {
 	return (
 		<div className={
 			'flex w-80 max-h-128 h-128 text-slate-700 text-sm font-medium '
-			+ (groupIsCreating ? 'cursor-wait' : '')
+			+ (groupIsCreating ? 'cursor-wait select-none' : '')
 		}>
 			<div className="flex flex-col min-w-full bg-slate-50">
 
@@ -106,7 +111,7 @@ const App = () => {
 						:
 						!groupIsCreating
 							?
-							<div className="text-center">No Groups</div>
+							<div className="text-center py-1">No Groups</div>
 
 							:
 							<></>
@@ -115,7 +120,7 @@ const App = () => {
 						?
 						<div className="relative flex justify-center items-center gap-2 pl-2 py-1 overflow-hidden">
 							<div className="w-4 h-4 border-2 border-t-sky-500 border-sky-200 rounded-full animate-spin select-none"></div>
-							<div>Group is created</div>
+							<div>Group is creating</div>
 						</div>
 
 						:
@@ -170,13 +175,13 @@ const App = () => {
 					className="flex justify-between items-center px-4 py-2"
 				>
 					<Button
-						onClick={() => setShowRenameModal(true)}
-						className="bg-sky-500 text-white"
-					>Rename</Button>
-					<Button
 						onClick={() => setShowDeleteModal(true)}
 						className="bg-pink-500 text-white"
 					>Delete</Button>
+					<Button
+						onClick={() => setShowRenameModal(true)}
+						className="bg-sky-500 text-white"
+					>Rename</Button>
 				</div>
 			</div>
 			{/* Настройки */}

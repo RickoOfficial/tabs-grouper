@@ -10,6 +10,7 @@ class Group {
 			this.name = options.name
 			this.index = options.index
 			this.tabs = options.tabs
+			this.active = options.active
 		}
 	}
 
@@ -17,7 +18,7 @@ class Group {
 		this.name = redactGroup.name
 	}
 
-	async addTab(tabData) {
+	addTab(tabData) {
 		let newTab = {
 			id: tabData.id,
 			url: tabData.url || 'chrome://newtab',
